@@ -1,0 +1,37 @@
+fix_seed: 0
+checkpoints_every: 64
+tensorboard_log: True
+result_path: ./results/test/
+
+model:
+  compile_model: False
+
+train_settings:
+  data_path: /path/to/training_data/
+  num_epochs: 32
+  shuffle: True
+  mixed_precision: bf16 # no, fp16, bf16, fp8
+  batch_size: 16
+  num_workers: 4
+  grad_accumulation: 4
+
+valid_settings:
+  data_path: /path/to/validation_data/
+  batch_size: 8
+  num_workers: 0
+
+optimizer:
+  name: adam
+  lr: 5e-5
+  weight_decouple: True
+  weight_decay: 1e-2
+  eps: 1e-16
+  beta_1: 0.9
+  beta_2: 0.999
+  use_8bit_adam: False
+  grad_clip_norm: 1
+  decay: # presumably a cosine decay learning rate scheduler with warmup
+    warmup: 512
+    min_lr: 5e-6
+    gamma: 0.2
+    num_restarts: 1
