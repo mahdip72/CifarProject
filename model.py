@@ -6,6 +6,7 @@ import torch.nn.functional as F
 def prepare_model(configs):
     # todo: Add the code to prepare the model here.
 
+    # todo: replace this line
     with open(configs, 'r') as file:
         configs = yaml.safe_load(file)
 
@@ -14,21 +15,38 @@ def prepare_model(configs):
             super(CIFAR_Model, self).__init__()
 
             in_channels = configs['model']['in_channels']
+            out_channels = configs['model']['out_channels']
             num_layers = configs['model']['num_layers']
             num_classes = configs['model']['num_classes']
 
-
-            self.conv1 = nn.Conv2d(in_channels, in_channels*2, 5)
+            self.conv_layers = nn.ModuleList()
             self.pool = nn.MaxPool2d(2, 2)
-            self.conv2 = nn.Conv2d(6, 16, 5)
-            self.fc1 = nn.Linear(16 * 5 * 5, 120)
-            self.fc2 = nn.Linear(120, 84)
-            self.fc3 = nn.Linear(84, 10)
+
+            for i in range(num_layers):
+                if i == 0:
+                    out_channels = out_channels
+                else:
+                    out_channels = out_channels * 2  # Double the channels with each layer
+
+                conv_layer = nn.Conv2d(in_channels, out_channels, kernel_size=5, padding=2)
+                self.conv_layers.append(conv_layer)
+                in_channels = out_channels
+
+            feature_size = 32 // (2 ** num_layers)
+            flattened_size = out_channels * feature_size * feature_size
+
+            print(flattened_size)
+
+            # todo: not sure how to choose the dimensions for the fully connected layers, also not sure how many fully connected layers to use
+            self.fc1 = nn.Linear(flattened_size, flattened_size // 4)
+            self.fc2 = nn.Linear(flattened_size // 4, flattened_size // 8)
+            self.fc3 = nn.Linear(flattened_size // 8, num_classes)
 
         def forward(self, x):
-            x = self.pool(F.relu(self.conv1(x)))
-            x = self.pool(F.relu(self.conv2(x)))
-            x = x.view(-1, 16 * 5 * 5)
+            for conv_layer in self.conv_layers:
+                x = self.pool(F.relu(conv_layer(x)))
+
+            x = torch.flatten(x, 1)
             x = F.relu(self.fc1(x))
             x = F.relu(self.fc2(x))
             x = self.fc3(x)
@@ -45,6 +63,14 @@ if __name__ == '__main__':
     print("Testing model components")
     model = prepare_model('configs/config.yaml')
     print(model)
-    print(model.conv1)
+
+    dummy_input = torch.randn(1, 3, 32, 32)
+
+    try:
+        output = model(dummy_input)
+        print(f"Output shape: {output.shape}")
+    except Exception as e:
+        print(f"Error during forward pass: {e}")
+
     total_params = count_parameters(model)
     print(f"Total parameters: {total_params}")

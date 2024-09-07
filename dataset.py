@@ -11,6 +11,7 @@ def prepare_dataloaders(configs):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
+    # todo: replace this line
     with open(configs, 'r') as file:
         configs = yaml.safe_load(file)
 

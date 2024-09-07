@@ -6,6 +6,7 @@ result_path: ./results/test/
 model:
   compile_model: False
   in_channels: 3
+  out_channels: 10
   num_layers: 3
   num_classes: 10
 
