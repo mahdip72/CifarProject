@@ -5,6 +5,11 @@ result_path: ./results/test/
 
 model:
   compile_model: False
+  in_channels: 3
+  num_layers: 3
+  num_classes: 10
+
+
 
 train_settings:
   data_path: /path/to/training_data/
