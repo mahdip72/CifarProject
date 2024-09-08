@@ -10,8 +10,6 @@ model:
   num_layers: 3
   num_classes: 10
 
-
-
 train_settings:
   data_path: /path/to/training_data/
   num_epochs: 32

@@ -11,18 +11,16 @@ def prepare_dataloaders(configs):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
-    # todo: replace this line
-    with open(configs, 'r') as file:
-        configs = yaml.safe_load(file)
-
-    batch_size = configs['train_settings']['batch_size']
-    num_workers = configs['train_settings']['num_workers']
+    train_batch_size = configs.train_settings.batch_size
+    valid_batch_size = configs.valid_settings.batch_size
+    shuffle = configs.train_settings.shuffle
+    num_workers = configs.train_settings.num_workers
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=train_batch_size, shuffle=shuffle, num_workers=num_workers)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=valid_batch_size, shuffle=False, num_workers=num_workers)
 
     return trainloader, testloader
 
@@ -30,7 +28,14 @@ def prepare_dataloaders(configs):
 if __name__ == '__main__':
     # This is the main function to test the dataloader
     print("Testing dataloader")
-    trainloader, testloader = prepare_dataloaders('configs/config.yaml')
+
+    from box import Box
+    config_file_path = 'configs/config.yaml'
+    with open(config_file_path, 'r') as file:
+        config_data = yaml.safe_load(file)
+    configs = Box(config_data)
+
+    trainloader, testloader = prepare_dataloaders(configs)
     print(len(trainloader))
     print(len(testloader))
     print(trainloader.dataset)

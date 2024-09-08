@@ -27,7 +27,6 @@ def prepare_saving_dir(configs, config_file_path):
 
     # Copy the config file to the result directory.
     shutil.copy(config_file_path, result_path)
-
     # Return the path to the result directory.
     return result_path, checkpoint_path
 

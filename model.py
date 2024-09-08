@@ -6,21 +6,18 @@ import torch.nn.functional as F
 def prepare_model(configs):
     # todo: Add the code to prepare the model here.
 
-    # todo: replace this line
-    with open(configs, 'r') as file:
-        configs = yaml.safe_load(file)
-
     class CIFAR_Model(nn.Module):
         def __init__(self, configs):
             super(CIFAR_Model, self).__init__()
 
-            in_channels = configs['model']['in_channels']
-            out_channels = configs['model']['out_channels']
-            num_layers = configs['model']['num_layers']
-            num_classes = configs['model']['num_classes']
+            # not sure how to choose the proper amount of out_channels and layers
+            in_channels = configs.model.in_channels
+            out_channels = configs.model.out_channels
+            num_layers = configs.model.num_layers
+            num_classes = configs.model.num_classes
 
             self.conv_layers = nn.ModuleList()
-            self.pool = nn.MaxPool2d(2, 2)
+            self.pool = nn.MaxPool2d( 2, 2)
 
             for i in range(num_layers):
                 if i == 0:
@@ -35,8 +32,6 @@ def prepare_model(configs):
             feature_size = 32 // (2 ** num_layers)
             flattened_size = out_channels * feature_size * feature_size
 
-            print(flattened_size)
-
             # todo: not sure how to choose the dimensions for the fully connected layers, also not sure how many fully connected layers to use
             self.fc1 = nn.Linear(flattened_size, flattened_size // 4)
             self.fc2 = nn.Linear(flattened_size // 4, flattened_size // 8)
@@ -45,7 +40,6 @@ def prepare_model(configs):
         def forward(self, x):
             for conv_layer in self.conv_layers:
                 x = self.pool(F.relu(conv_layer(x)))
-
             x = torch.flatten(x, 1)
             x = F.relu(self.fc1(x))
             x = F.relu(self.fc2(x))
@@ -61,7 +55,14 @@ def count_parameters(model):
 if __name__ == '__main__':
     # This is the main function to test the model's components
     print("Testing model components")
-    model = prepare_model('configs/config.yaml')
+
+    from box import Box
+    config_file_path = 'configs/config.yaml'
+    with open(config_file_path, 'r') as file:
+        config_data = yaml.safe_load(file)
+    configs = Box(config_data)
+
+    model = prepare_model(configs)
     print(model)
 
     dummy_input = torch.randn(1, 3, 32, 32)
