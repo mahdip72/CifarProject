@@ -6,6 +6,13 @@ import yaml
 def prepare_dataloaders(configs):
     # todo: Add the code to prepare the dataloaders here.
 
+    transform_train = transforms.Compose([
+        transforms.RandomHorizontalFlip(),  # Randomly flip images horizontally
+        transforms.RandomCrop(32, padding=4),  # Randomly crop with padding
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))  # CIFAR-10 normalization
+    ])
+
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))  # CIFAR-10-specific normalization
@@ -16,7 +23,7 @@ def prepare_dataloaders(configs):
     shuffle = configs.train_settings.shuffle
     num_workers = configs.train_settings.num_workers
 
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=train_batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=True)
