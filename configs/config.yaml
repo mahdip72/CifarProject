@@ -9,6 +9,7 @@ model:
   out_channels: 10
   num_layers: 3
   num_classes: 10
+  num_pool_layers: 2
 
 train_settings:
   data_path: /path/to/training_data/

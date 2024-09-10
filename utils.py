@@ -52,3 +52,34 @@ def load_configs(config):
     tree_config.optimizer.eps = float(tree_config.optimizer.eps)
 
     return tree_config
+
+def write_accuracy(result_path, accuracy):
+    """
+    Write the accuracy to a file in the result directory.
+
+    Args:
+        result_path: The path to the result directory.
+        accuracy: The accuracy value to write to the file.
+    """
+    with open(os.path.join(result_path, 'accuracy.txt'), 'w') as f:
+        f.write(f"Accuracy: {accuracy}%\n")
+
+def plot_loss(train_losses, val_losses, result_path):
+    """
+    Plot the training and validation loss and save the plot to the result directory.
+
+    Args:
+        train_losses: A list of training losses.
+        val_losses: A list of validation losses.
+        result_path: The path to the result directory.
+    """
+    import matplotlib.pyplot as plt
+
+    plt.plot(train_losses, label='Training Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.savefig(os.path.join(result_path, 'loss_plot.png'))
+    plt.show()
