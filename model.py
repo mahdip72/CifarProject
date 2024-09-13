@@ -3,59 +3,94 @@ import torch.nn as nn
 import yaml
 import torch.nn.functional as F
 
+
+class BasicBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1):
+        super(BasicBlock, self).__init__()
+
+        # First convolutional layer
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+
+        # Second convolutional layer
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+
+        # skip connection layer
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_channels != out_channels:
+            self.shortcut = nn.Sequential(
+                # use 1x1 convolution to match the dimensions
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(out_channels)
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += self.shortcut(x)  # Add the skip connection
+        out = F.relu(out)
+        return out
+
+
+class CIFAR_Model(nn.Module):
+    def __init__(self, configs):
+        super(CIFAR_Model, self).__init__()
+
+        # updating to resnet model
+
+        # not sure how to choose the proper amount of out_channels and layers
+        in_channels = configs.model.in_channels
+        out_channels = configs.model.out_channels
+        num_layers = configs.model.num_layers
+        num_classes = configs.model.num_classes
+
+        # initial convolutional layer
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+
+        # create residual layers
+        self.res_layers = nn.ModuleList()
+        for i in range(num_layers):
+            if i == 0:
+                res_layer = self._make_layer(out_channels, out_channels, num_blocks=2, stride=1)
+            else:
+                res_layer = self._make_layer(out_channels, out_channels*2, num_blocks=2, stride=2)
+                out_channels *= 2
+            self.res_layers.append(res_layer)
+
+        # global average pooling layer
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
+        # final fully connected layer
+        self.fc = nn.Linear(out_channels, num_classes)
+
+    def forward(self, x):
+        # initial convolutional layer
+        x = F.relu(self.bn1(self.conv1(x)))
+        # residual layers
+        for res_layer in self.res_layers:
+            x = res_layer(x)
+        # global average pooling
+        x = self.pool(x)
+        x = torch.flatten(x, 1)
+        # final fully connected layer
+        x = self.fc(x)
+        return x
+
+    def _make_layer(self, in_channels, out_channels, num_blocks, stride):
+        layers = []
+        layers.append(BasicBlock(in_channels, out_channels, stride))
+        for _ in range(1, num_blocks):
+            layers.append(BasicBlock(out_channels, out_channels, stride=1))
+        return nn.Sequential(*layers)
+
 def prepare_model(configs):
     # todo: Add the code to prepare the model here.
 
-    class CIFAR_Model(nn.Module):
-        def __init__(self, configs):
-            super(CIFAR_Model, self).__init__()
-
-            # not sure how to choose the proper amount of out_channels and layers
-            in_channels = configs.model.in_channels
-            out_channels = configs.model.out_channels
-            num_layers = configs.model.num_layers
-            num_classes = configs.model.num_classes
-            num_pool_layers = configs.model.num_pool_layers
-
-            self.conv_layers = nn.ModuleList()
-            self.bn_layers = nn.ModuleList()
-            self.pool = nn.MaxPool2d( 2, 2)
-
-            for i in range(num_layers):
-                if i == 0:
-                    out_channels = out_channels
-                else:
-                    out_channels = out_channels * 2  # Double the channels with each layer
-
-                conv_layer = nn.Conv2d(in_channels, out_channels, kernel_size=5, padding=2)
-                self.conv_layers.append(conv_layer)
-                self.bn_layers.append(nn.BatchNorm2d(out_channels))  # Batch norm after each conv layer
-                in_channels = out_channels
-
-            feature_size = 32 // (2 ** num_pool_layers)
-            flattened_size = out_channels * feature_size * feature_size
-
-            # todo: not sure how to choose the dimensions for the fully connected layers, also not sure how many fully connected layers to use
-            self.fc1 = nn.Linear(flattened_size, flattened_size // 16 )
-            self.bn_fc1 = nn.BatchNorm1d(flattened_size // 16)
-            self.fc2 = nn.Linear(flattened_size // 16, flattened_size // 32)
-            self.bn_fc2 = nn.BatchNorm1d(flattened_size // 32)
-            self.fc3 = nn.Linear(flattened_size // 32, num_classes)
-
-        def forward(self, x):
-            for i, conv_layer in enumerate(self.conv_layers):
-                x = F.relu(self.bn_layers[i](conv_layer(x)))
-                # pool every other layer
-                if i % 2 == 0:
-                    x = self.pool(x)
-            x = torch.flatten(x, 1)
-            x = F.relu(self.bn_fc1(self.fc1(x)))
-            x = F.relu(self.bn_fc2(self.fc2(x)))
-            x = self.fc3(x)
-            return x
-
     model = CIFAR_Model(configs)
     return model
+
+
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
