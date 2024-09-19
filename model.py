@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import yaml
 import torch.nn.functional as F
 
 
@@ -9,11 +8,13 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
 
         # First convolutional layer
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3,
+                               stride=stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(out_channels)
 
         # Second convolutional layer
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3,
+                               padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(out_channels)
 
         # skip connection layer
@@ -37,25 +38,25 @@ class CIFAR_Model(nn.Module):
     def __init__(self, configs):
         super(CIFAR_Model, self).__init__()
 
-        # updating to resnet model
-
-        # not sure how to choose the proper amount of out_channels and layers
         in_channels = configs.model.in_channels
         out_channels = configs.model.out_channels
         num_layers = configs.model.num_layers
         num_classes = configs.model.num_classes
 
         # initial convolutional layer
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3,
+                               stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(out_channels)
 
         # create residual layers
         self.res_layers = nn.ModuleList()
         for i in range(num_layers):
             if i == 0:
-                res_layer = self._make_layer(out_channels, out_channels, num_blocks=2, stride=1)
+                res_layer = self._make_layer(out_channels, out_channels,
+                                             num_blocks=2, stride=1)
             else:
-                res_layer = self._make_layer(out_channels, out_channels*2, num_blocks=2, stride=2)
+                res_layer = self._make_layer(out_channels, out_channels*2,
+                                             num_blocks=2, stride=2)
                 out_channels *= 2
             self.res_layers.append(res_layer)
 
@@ -85,8 +86,6 @@ class CIFAR_Model(nn.Module):
         return nn.Sequential(*layers)
 
 def prepare_model(configs):
-    # todo: Add the code to prepare the model here.
-
     model = CIFAR_Model(configs)
     return model
 
@@ -100,6 +99,8 @@ if __name__ == '__main__':
     print("Testing model components")
 
     from box import Box
+    import yaml
+
     config_file_path = 'configs/config.yaml'
     with open(config_file_path, 'r') as file:
         config_data = yaml.safe_load(file)

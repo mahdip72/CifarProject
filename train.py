@@ -21,7 +21,8 @@ def get_optimizer(model, configs):
     return optimizer
 
 # not very clean, but added a plotting functionality to look for overfitting
-def train_model(model, trainloader, optimizer, num_epochs, device, plot_losses=False, testloader=None):
+def train_model(model, trainloader, optimizer, num_epochs, device,
+                plot_losses=False, testloader=None):
     if plot_losses:
         train_losses = []
         val_losses = []
@@ -62,6 +63,8 @@ def validate_model(model, testloader, device):
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
+
+
     accuracy = 100*correct/total
     print(f'Accuracy on test set: {accuracy}%')
     return accuracy
@@ -104,14 +107,16 @@ def main(dict_config, config_file_path):
     optimizer = get_optimizer(model, configs)
     num_epochs = configs.train_settings.num_epochs
 
-    train_losses, test_losses = train_model(model, trainloader, optimizer, num_epochs, device, plot_losses=True, testloader=testloader)
+    train_losses, test_losses = train_model(
+        model, trainloader, optimizer, num_epochs, device,
+        plot_losses=True, testloader=testloader
+    )
     accuracy = validate_model(model, testloader, device)
 
     # should I write the accuracy to the result directory?
     write_accuracy(result_path, accuracy)
     plot_loss(train_losses, test_losses, result_path)
 
-    # Todo: Add the rest of the code here.
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train a deep model on Cifar10 dataset.")
