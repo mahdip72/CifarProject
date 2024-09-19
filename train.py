@@ -6,6 +6,7 @@ from utils import load_configs, prepare_saving_dir, write_accuracy, plot_loss
 from dataset import prepare_dataloaders
 from model import prepare_model
 import random
+import tqdm
 
 
 def get_optimizer(model, configs):
@@ -31,7 +32,8 @@ def train_model(model, trainloader, optimizer, num_epochs, device,
     for epoch in range(num_epochs):
         running_loss = 0.0
         total_running_loss = 0.0
-        for i, (inputs, labels) in enumerate(trainloader):
+        for i, (inputs, labels) in tqdm.tqdm(enumerate(trainloader), total=len(trainloader), desc=f'Epoch {epoch + 1}',
+                                             leave=False):
             inputs, labels = inputs.to(device), labels.to(device)
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -43,7 +45,7 @@ def train_model(model, trainloader, optimizer, num_epochs, device,
             if plot_losses:
                 total_running_loss += loss.item()
             if i % 100 == 99:
-                print(f'Epoch {epoch + 1}, Batch {i + 1}, Loss: {running_loss / 100:.4f}')
+                # print(f'Epoch {epoch + 1}, Batch {i + 1}, Loss: {running_loss / 100:.4f}')
                 running_loss = 0.0
         if plot_losses and testloader is not None:
             train_losses.append(total_running_loss / len(trainloader))
