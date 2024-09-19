@@ -15,7 +15,7 @@ train_settings:
   num_epochs: 32
   shuffle: True
   mixed_precision: bf16 # no, fp16, bf16, fp8
-  batch_size: 16
+  batch_size: 128
   num_workers: 4
   grad_accumulation: 4
 
