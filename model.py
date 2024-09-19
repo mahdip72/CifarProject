@@ -34,9 +34,9 @@ class BasicBlock(nn.Module):
         return out
 
 
-class CIFAR_Model(nn.Module):
+class CIFARModel(nn.Module):
     def __init__(self, configs):
-        super(CIFAR_Model, self).__init__()
+        super(CIFARModel, self).__init__()
 
         in_channels = configs.model.in_channels
         out_channels = configs.model.out_channels
@@ -85,14 +85,15 @@ class CIFAR_Model(nn.Module):
             layers.append(BasicBlock(out_channels, out_channels, stride=1))
         return nn.Sequential(*layers)
 
-def prepare_model(configs):
-    model = CIFAR_Model(configs)
-    return model
 
+def prepare_model(configs):
+    model = CIFARModel(configs)
+    return model
 
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
+
 
 if __name__ == '__main__':
     # This is the main function to test the model's components
@@ -104,18 +105,18 @@ if __name__ == '__main__':
     config_file_path = 'configs/config.yaml'
     with open(config_file_path, 'r') as file:
         config_data = yaml.safe_load(file)
-    configs = Box(config_data)
+    test_configs = Box(config_data)
 
-    model = prepare_model(configs)
-    print(model)
+    test_model = prepare_model(test_configs)
+    print(test_model)
 
     dummy_input = torch.randn(1, 3, 32, 32)
 
     try:
-        output = model(dummy_input)
+        output = test_model(dummy_input)
         print(f"Output shape: {output.shape}")
     except Exception as e:
         print(f"Error during forward pass: {e}")
 
-    total_params = count_parameters(model)
+    total_params = count_parameters(test_model)
     print(f"Total parameters: {total_params}")
