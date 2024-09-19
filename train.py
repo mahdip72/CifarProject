@@ -2,7 +2,7 @@ import argparse
 import yaml
 import torch
 import numpy as np
-from utils import load_configs, prepare_saving_dir, write_accuracy, plot_loss
+from utils import load_configs, prepare_saving_dir, write_accuracy, plot_loss, prepare_tensorboard
 from dataset import prepare_dataloaders
 from model import prepare_model
 import random
@@ -73,12 +73,12 @@ def validate_model(model, testloader, device):
 
 
 def training_loop():
-    # todo: develop you code here
+    # todo: develop your code here
     pass
 
 
 def validation_loop():
-    # todo: develop you code here
+    # todo: develop your code here
     pass
 
 
@@ -117,6 +117,10 @@ def main(dict_config, config_file_path):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
     optimizer = get_optimizer(model, configs)
+
+    # Initialize train and valid TensorBoards
+    train_writer, valid_writer = prepare_tensorboard(result_path)
+
     num_epochs = configs.train_settings.num_epochs
 
     train_losses, test_losses = train_model(

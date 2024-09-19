@@ -3,6 +3,22 @@ from pathlib import Path
 import datetime
 import os
 import shutil
+from torch.utils.tensorboard import SummaryWriter
+
+
+def prepare_tensorboard(result_path):
+    train_path = os.path.join(result_path, 'train')
+    val_path = os.path.join(result_path, 'val')
+    Path(train_path).mkdir(parents=True, exist_ok=True)
+    Path(val_path).mkdir(parents=True, exist_ok=True)
+
+    train_log_path = os.path.join(train_path, 'tensorboard')
+    train_writer = SummaryWriter(train_log_path)
+
+    val_log_path = os.path.join(val_path, 'tensorboard')
+    val_writer = SummaryWriter(val_log_path)
+
+    return train_writer, val_writer
 
 
 def prepare_saving_dir(configs, config_file_path):
