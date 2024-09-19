@@ -72,6 +72,16 @@ def validate_model(model, testloader, device):
     return accuracy
 
 
+def training_loop():
+    # todo: develop you code here
+    pass
+
+
+def validation_loop():
+    # todo: develop you code here
+    pass
+
+
 def quick_valid_loss(model, testloader, device, subset_size=100):
     model.eval()  # Set model to evaluation mode
     val_loss = 0.0
@@ -118,6 +128,10 @@ def main(dict_config, config_file_path):
     # should I write the accuracy to the result directory?
     write_accuracy(result_path, accuracy)
     plot_loss(train_losses, test_losses, result_path)
+
+    for epoch in range(num_epochs):
+        training_loop()
+        validation_loop()
 
 
 if __name__ == '__main__':
