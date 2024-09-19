@@ -3,7 +3,20 @@ from pathlib import Path
 import datetime
 import os
 import shutil
+import torch
 from torch.utils.tensorboard import SummaryWriter
+
+
+def get_optimizer(model, configs):
+    optimizer_config = configs.optimizer
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=optimizer_config.lr,
+        betas=(optimizer_config.beta_1, optimizer_config.beta_2),
+        eps=optimizer_config.eps,
+        weight_decay=optimizer_config.weight_decay
+    )
+    return optimizer
 
 
 def prepare_tensorboard(result_path):

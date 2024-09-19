@@ -2,24 +2,12 @@ import argparse
 import yaml
 import torch
 import numpy as np
-from utils import load_configs, prepare_saving_dir, write_accuracy, plot_loss, prepare_tensorboard
+from utils import load_configs, prepare_saving_dir, write_accuracy, plot_loss, prepare_tensorboard, get_optimizer
 from dataset import prepare_dataloaders
 from model import prepare_model
 import random
 import tqdm
 
-
-def get_optimizer(model, configs):
-    optimizer_config = configs.optimizer
-    if optimizer_config.name.lower() == 'adam':
-        optimizer = torch.optim.Adam(
-            model.parameters(),
-            lr=optimizer_config.lr,
-            betas=(optimizer_config.beta_1, optimizer_config.beta_2),
-            eps=optimizer_config.eps,
-            weight_decay=optimizer_config.weight_decay
-        )
-    return optimizer
 
 # not very clean, but added a plotting functionality to look for overfitting
 def train_model(model, trainloader, optimizer, num_epochs, device,
