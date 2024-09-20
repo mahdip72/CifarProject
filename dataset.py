@@ -68,7 +68,6 @@ def visualize_random_batch(trainloader, num_images=10):
     mean = (0.4914, 0.4822, 0.4465)
     std = (0.2470, 0.2435, 0.2616)
 
-
     images = torch.stack([denormalize(img, mean, std) for img in images])
     images_np = images.numpy()
 
@@ -94,16 +93,16 @@ if __name__ == '__main__':
     config_file_path = 'configs/config.yaml'
     with open(config_file_path, 'r') as file:
         config_data = yaml.safe_load(file)
-    configs = Box(config_data)
+    input_configs = Box(config_data)
 
-    trainloader, testloader = prepare_dataloaders(configs)
-    print(len(trainloader))
-    print(len(testloader))
-    print(trainloader.dataset)
-    print(testloader.dataset)
-    print(trainloader.dataset.data.shape)
+    train_loader, test_loader = prepare_dataloaders(input_configs)
+    print(len(train_loader))
+    print(len(test_loader))
+    print(train_loader.dataset)
+    print(test_loader.dataset)
+    print(train_loader.dataset.data.shape)
 
-    visualize_random_batch(trainloader)
+    visualize_random_batch(train_loader)
 
     # # Load the dataset without normalization
     # trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transforms.ToTensor())
