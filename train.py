@@ -7,7 +7,7 @@ from dataset import prepare_dataloaders
 from model import prepare_model
 import tqdm
 
-def training_loop(model, trainloader, optimizer, epoch, device):
+def training_loop(model, trainloader, optimizer, epoch, device, train_writer=None):
     model.train()
     running_loss = 0.0
     for i, (inputs, labels) in tqdm.tqdm(enumerate(trainloader), total=len(trainloader), desc=f'Epoch {epoch + 1}',
@@ -19,10 +19,17 @@ def training_loop(model, trainloader, optimizer, epoch, device):
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
-    return running_loss
+
+    avg_train_loss = running_loss / len(trainloader)
+    if train_writer:
+        train_writer.add_scalar('Loss/train', avg_train_loss, epoch)
+        lr = optimizer.param_groups[0]['lr']
+        train_writer.add_scalar('Learning_Rate', lr, epoch)
+
+    return avg_train_loss
 
 
-def validation_loop(model, testloader, epoch, device):
+def validation_loop(model, testloader, epoch, device, valid_writer=None):
     model.eval()
     total = 0
     correct = 0
@@ -43,7 +50,12 @@ def validation_loop(model, testloader, epoch, device):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
+    avg_valid_loss = valid_loss / len(testloader)
     accuracy = 100*correct/total
+    if valid_writer:
+        valid_writer.add_scalar('Loss/valid', avg_valid_loss, epoch)
+        valid_writer.add_scalar('Accuracy/valid', accuracy, epoch)
+
     print(f'Accuracy on epoch {epoch}: {accuracy}%')
     return valid_loss
 
@@ -71,8 +83,8 @@ def main(dict_config, config_file_path):
     num_epochs = configs.train_settings.num_epochs
 
     for epoch in range(num_epochs):
-        training_loop(model, trainloader, optimizer, epoch, device)
-        validation_loop(model, testloader, epoch, device)
+        training_loop(model, trainloader, optimizer, epoch, device, train_writer)
+        validation_loop(model, testloader, epoch, device, valid_writer)
 
 
 if __name__ == '__main__':
