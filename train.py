@@ -19,7 +19,7 @@ def training_loop(model, trainloader, optimizer, epoch, device, train_writer=Non
     model.train()
     running_loss = 0.0
     for i, (inputs, labels) in tqdm.tqdm(enumerate(trainloader), total=len(trainloader), desc=f'Epoch {epoch + 1}',
-                                         leave=False):
+                                         leave=False, disable=not kwargs['configs'].tqdm_progress_bar):
         inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
         predicts = model(inputs)
@@ -64,7 +64,7 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwarg
     criterion = torch.nn.functional.cross_entropy
 
     for i, (inputs, labels) in tqdm.tqdm(enumerate(testloader), total=len(testloader), desc=f'Validation Epoch {epoch + 1}',
-                                         leave=False):
+                                         leave=False, disable=not kwargs['configs'].tqdm_progress_bar):
         with torch.no_grad():
             inputs, labels = inputs.to(device), labels.to(device)
             predicts = model(inputs)

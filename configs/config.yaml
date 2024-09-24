@@ -1,6 +1,7 @@
 fix_seed: 0
 checkpoints_every: 64
 tensorboard_log: True
+tqdm_progress_bar: False
 result_path: ./results/test/
 
 model:
@@ -26,7 +27,7 @@ valid_settings:
 
 optimizer:
   name: adam
-  lr: 5e-5
+  lr: 5e-4
   weight_decouple: True
   weight_decay: 1e-2
   eps: 1e-16
