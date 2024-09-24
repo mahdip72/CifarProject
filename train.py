@@ -45,7 +45,7 @@ def training_loop(model, trainloader, optimizer, epoch, device, train_writer=Non
         lr = optimizer.param_groups[0]['lr']
         train_writer.add_scalar('Learning_Rate', lr, epoch)
 
-    print(f'Accuracy on epoch {epoch}: {epoch_acc}%')
+    print(f'Accuracy on epoch {epoch}: {100*accuracy: .2f}%')
     return avg_train_loss
 
 
@@ -91,7 +91,7 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwarg
         valid_writer.add_scalar('Accuracy', accuracy, epoch)
         valid_writer.add_scalar('F1_Score', f1_score, epoch)
 
-    print(f'Validation Accuracy on epoch {epoch}: {accuracy}%')
+    print(f'Validation Accuracy on epoch {epoch}: {100*accuracy: .2f}%')
     return valid_loss
 
 def main(dict_config, config_file_path):
