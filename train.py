@@ -38,6 +38,9 @@ def training_loop(model, trainloader, optimizer, epoch, device, train_writer=Non
     epoch_acc = accuracy.compute().cpu().item()
     epoch_f1 = f1_score.compute().cpu().item()
 
+    accuracy.reset()
+    f1_score.reset()
+
     if train_writer:
         train_writer.add_scalar('Loss', avg_train_loss, epoch)
         train_writer.add_scalar('Accuracy', epoch_acc, epoch)
@@ -85,6 +88,9 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwarg
 
     accuracy = accuracy.compute().cpu().item()
     f1_score = f1_score.compute().cpu().item()
+
+    accuracy.reset()
+    f1_score.reset()
 
     if valid_writer:
         valid_writer.add_scalar('Loss', avg_valid_loss, epoch)
