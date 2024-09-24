@@ -37,9 +37,9 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None):
 
     criterion = torch.nn.functional.cross_entropy
 
-    with torch.no_grad():
-        for i, (inputs, labels) in tqdm.tqdm(enumerate(testloader), total=len(testloader), desc=f'Validation Epoch {epoch + 1}',
-                                             leave=False):
+    for i, (inputs, labels) in tqdm.tqdm(enumerate(testloader), total=len(testloader), desc=f'Validation Epoch {epoch + 1}',
+                                         leave=False):
+        with torch.no_grad():
             inputs, labels = inputs.to(device), labels.to(device)
             outputs = model(inputs)
 
