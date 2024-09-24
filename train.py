@@ -22,7 +22,7 @@ def training_loop(model, trainloader, optimizer, epoch, device, train_writer=Non
 
     avg_train_loss = running_loss / len(trainloader)
     if train_writer:
-        train_writer.add_scalar('Loss/train', avg_train_loss, epoch)
+        train_writer.add_scalar('Loss', avg_train_loss, epoch)
         lr = optimizer.param_groups[0]['lr']
         train_writer.add_scalar('Learning_Rate', lr, epoch)
 
@@ -53,8 +53,8 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None):
     avg_valid_loss = valid_loss / len(testloader)
     accuracy = 100*correct/total
     if valid_writer:
-        valid_writer.add_scalar('Loss/valid', avg_valid_loss, epoch)
-        valid_writer.add_scalar('Accuracy/valid', accuracy, epoch)
+        valid_writer.add_scalar('Loss', avg_valid_loss, epoch)
+        valid_writer.add_scalar('Accuracy', accuracy, epoch)
 
     print(f'Accuracy on epoch {epoch}: {accuracy}%')
     return valid_loss
