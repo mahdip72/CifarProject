@@ -48,7 +48,9 @@ def training_loop(model, trainloader, optimizer, epoch, device, train_writer=Non
         lr = optimizer.param_groups[0]['lr']
         train_writer.add_scalar('Learning_Rate', lr, epoch)
 
-    print(f'Accuracy on epoch {epoch}: {100*accuracy: .2f}%')
+    print(f'Accuracy on epoch {epoch}: {100*epoch_acc : .2f}%')
+    # print(f'Accuracy on epoch {epoch}: {100*accuracy: .2f}%')
+
     return avg_train_loss
 
 
@@ -60,8 +62,8 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwarg
     f1_score.to('cuda')
 
     model.eval()
-    total = 0
-    correct = 0
+    # total = 0
+    # correct = 0
     valid_loss = 0.0
 
     criterion = torch.nn.functional.cross_entropy
@@ -76,28 +78,30 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwarg
             valid_loss += loss.item()
 
             _, predicted = torch.max(predicts.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            # total += labels.size(0)
+            # correct += (predicted == labels).sum().item()
 
             predicts = torch.argmax(predicts, dim=1)
             accuracy.update(predicts.detach(), labels.detach())
             f1_score.update(predicts.detach(), labels.detach())
 
     avg_valid_loss = valid_loss / len(testloader)
-    # accuracy = 100*correct/total
+    # test_accuracy = correct/total
 
-    accuracy = accuracy.compute().cpu().item()
-    f1_score = f1_score.compute().cpu().item()
+    valid_accuracy = accuracy.compute().cpu().item()
+    valid_f1_score = f1_score.compute().cpu().item()
 
     accuracy.reset()
     f1_score.reset()
 
     if valid_writer:
         valid_writer.add_scalar('Loss', avg_valid_loss, epoch)
-        valid_writer.add_scalar('Accuracy', accuracy, epoch)
-        valid_writer.add_scalar('F1_Score', f1_score, epoch)
+        valid_writer.add_scalar('Accuracy', valid_accuracy, epoch)
+        valid_writer.add_scalar('F1_Score', valid_f1_score, epoch)
 
-    print(f'Validation Accuracy on epoch {epoch}: {100*accuracy: .2f}%')
+    print(f'Validation Accuracy on epoch {epoch}: {100*valid_accuracy: .2f}%')
+    # print(f'Test Accuracy on epoch {epoch}: {100*test_accuracy: .2f}%')
+
     return valid_loss
 
 def main(dict_config, config_file_path):
