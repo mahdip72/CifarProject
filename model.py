@@ -88,6 +88,8 @@ class CIFARModel(nn.Module):
 
 def prepare_model(configs):
     model = CIFARModel(configs)
+    total_params = count_parameters(model)
+    print(f"Total parameters: {total_params}")
     return model
 
 
@@ -118,5 +120,3 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Error during forward pass: {e}")
 
-    total_params = count_parameters(test_model)
-    print(f"Total parameters: {total_params}")

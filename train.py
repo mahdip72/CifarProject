@@ -13,8 +13,8 @@ def training_loop(model, trainloader, optimizer, epoch, device, train_writer=Non
     accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=10)
     f1_score = torchmetrics.F1Score(num_classes=10, average='macro', task="multiclass")
 
-    accuracy.to('cuda')
-    f1_score.to('cuda')
+    accuracy.to(device)
+    f1_score.to(device)
 
     model.train()
     running_loss = 0.0
@@ -58,8 +58,8 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwarg
     accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=10)
     f1_score = torchmetrics.F1Score(num_classes=10, average='macro', task="multiclass")
 
-    accuracy.to('cuda')
-    f1_score.to('cuda')
+    accuracy.to(device)
+    f1_score.to(device)
 
     model.eval()
     # total = 0
