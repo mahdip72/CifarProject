@@ -24,19 +24,15 @@ def training_loop(model, trainloader, optimizer, epoch, device, scaler, train_wr
                                          leave=False, disable=not kwargs['configs'].tqdm_progress_bar):
         inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
+
         with autocast(device_type=device.type):
             predicts = model(inputs)
             loss = torch.nn.functional.cross_entropy(predicts, labels)
-        # Scale the loss before backpropagation
+
         scaler.scale(loss).backward()
-
-        # Unscale and apply the optimizer step
         scaler.step(optimizer)
-
-        # Update the scale for the next iteration
         scaler.update()
         running_loss += loss.item()
-
         predicts = torch.argmax(predicts, dim=1)
 
         accuracy.update(predicts.detach(), labels.detach())
@@ -58,7 +54,6 @@ def training_loop(model, trainloader, optimizer, epoch, device, scaler, train_wr
         train_writer.add_scalar('Learning_Rate', lr, epoch)
 
     print(f'Accuracy on epoch {epoch}: {100*epoch_acc : .2f}%')
-    # print(f'Accuracy on epoch {epoch}: {100*accuracy: .2f}%')
 
     return avg_train_loss
 
