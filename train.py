@@ -7,9 +7,11 @@ from dataset import prepare_dataloaders
 from model import prepare_model
 import tqdm
 import torchmetrics
+from torch.amp import GradScaler, autocast
 
 
-def training_loop(model, trainloader, optimizer, epoch, device, train_writer=None, **kwargs):
+
+def training_loop(model, trainloader, optimizer, epoch, device, scaler, train_writer=None, **kwargs):
     accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=10)
     f1_score = torchmetrics.F1Score(num_classes=10, average='macro', task="multiclass")
 
@@ -22,10 +24,17 @@ def training_loop(model, trainloader, optimizer, epoch, device, train_writer=Non
                                          leave=False, disable=not kwargs['configs'].tqdm_progress_bar):
         inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
-        predicts = model(inputs)
-        loss = torch.nn.functional.cross_entropy(predicts, labels)
-        loss.backward()
-        optimizer.step()
+        with autocast(device_type=device.type):
+            predicts = model(inputs)
+            loss = torch.nn.functional.cross_entropy(predicts, labels)
+        # Scale the loss before backpropagation
+        scaler.scale(loss).backward()
+
+        # Unscale and apply the optimizer step
+        scaler.step(optimizer)
+
+        # Update the scale for the next iteration
+        scaler.update()
         running_loss += loss.item()
 
         predicts = torch.argmax(predicts, dim=1)
@@ -54,7 +63,7 @@ def training_loop(model, trainloader, optimizer, epoch, device, train_writer=Non
     return avg_train_loss
 
 
-def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwargs):
+def validation_loop(model, testloader, epoch, device, scaler, valid_writer=None, **kwargs):
     accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=10)
     f1_score = torchmetrics.F1Score(num_classes=10, average='macro', task="multiclass")
 
@@ -62,8 +71,6 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwarg
     f1_score.to(device)
 
     model.eval()
-    # total = 0
-    # correct = 0
     valid_loss = 0.0
 
     criterion = torch.nn.functional.cross_entropy
@@ -72,21 +79,16 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwarg
                                          leave=False, disable=not kwargs['configs'].tqdm_progress_bar):
         with torch.no_grad():
             inputs, labels = inputs.to(device), labels.to(device)
-            predicts = model(inputs)
-
-            loss = criterion(predicts, labels)
-            valid_loss += loss.item()
-
-            _, predicted = torch.max(predicts.data, 1)
-            # total += labels.size(0)
-            # correct += (predicted == labels).sum().item()
+            with autocast(device_type=device.type):
+                predicts = model(inputs)
+                loss = criterion(predicts, labels)
+                valid_loss += loss.item()
 
             predicts = torch.argmax(predicts, dim=1)
             accuracy.update(predicts.detach(), labels.detach())
             f1_score.update(predicts.detach(), labels.detach())
 
     avg_valid_loss = valid_loss / len(testloader)
-    # test_accuracy = correct/total
 
     valid_accuracy = accuracy.compute().cpu().item()
     valid_f1_score = f1_score.compute().cpu().item()
@@ -100,7 +102,6 @@ def validation_loop(model, testloader, epoch, device, valid_writer=None, **kwarg
         valid_writer.add_scalar('F1_Score', valid_f1_score, epoch)
 
     print(f'Validation Accuracy on epoch {epoch}: {100*valid_accuracy: .2f}%')
-    # print(f'Test Accuracy on epoch {epoch}: {100*test_accuracy: .2f}%')
 
     return valid_loss
 
@@ -127,9 +128,11 @@ def main(dict_config, config_file_path):
 
     num_epochs = configs.train_settings.num_epochs
 
+    scaler = GradScaler()
+
     for epoch in range(num_epochs):
-        training_loop(model, trainloader, optimizer, epoch, device, train_writer, configs=configs)
-        validation_loop(model, testloader, epoch, device, valid_writer, configs=configs)
+        training_loop(model, trainloader, optimizer, epoch, device, scaler, train_writer, configs=configs)
+        validation_loop(model, testloader, epoch, device, scaler, valid_writer, configs=configs)
 
 
 if __name__ == '__main__':
