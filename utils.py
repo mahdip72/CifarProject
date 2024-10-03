@@ -5,6 +5,7 @@ import os
 import shutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
+import torch.optim.lr_scheduler as lr_scheduler
 
 
 def get_optimizer(model, configs):
@@ -17,6 +18,27 @@ def get_optimizer(model, configs):
         weight_decay=optimizer_config.weight_decay
     )
     return optimizer
+
+
+def get_scheduler(optimizer, configs):
+    scheduler_config = configs.scheduler
+    scheduler_name = scheduler_config.name.lower()
+
+    if scheduler_name == 'cosine_annealing':
+        scheduler = lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=scheduler_config.T_max,
+            eta_min=scheduler_config.eta_min
+        )
+    elif scheduler_name == 'cosine_annealing_warm_restarts':
+        scheduler = lr_scheduler.CosineAnnealingWarmRestarts(
+            optimizer,
+            T_0=scheduler_config.T_0,  # Number of iterations/epochs for the first restart cycle
+            T_mult=scheduler_config.T_mult,  # Factor to increase the cycle length after each restart
+            eta_min=scheduler_config.eta_min  # Minimum learning rate after each restart
+        )
+
+    return scheduler
 
 
 def prepare_tensorboard(result_path):

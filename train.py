@@ -2,7 +2,7 @@ import argparse
 import yaml
 import torch
 import numpy as np
-from utils import load_configs, prepare_saving_dir, prepare_tensorboard, get_optimizer
+from utils import load_configs, prepare_saving_dir, prepare_tensorboard, get_optimizer, get_scheduler
 from dataset import prepare_dataloaders
 from model import prepare_model
 import tqdm
@@ -11,7 +11,7 @@ from torch.amp import GradScaler, autocast
 
 
 
-def training_loop(model, trainloader, optimizer, epoch, device, scaler, train_writer=None, **kwargs):
+def training_loop(model, trainloader, optimizer, epoch, device, scaler, scheduler, train_writer=None, **kwargs):
     accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=10)
     f1_score = torchmetrics.F1Score(num_classes=10, average='macro', task="multiclass")
 
@@ -25,6 +25,7 @@ def training_loop(model, trainloader, optimizer, epoch, device, scaler, train_wr
         inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
 
+        # mixed precision using autocast
         with autocast(device_type=device.type):
             predicts = model(inputs)
             loss = torch.nn.functional.cross_entropy(predicts, labels)
@@ -115,8 +116,11 @@ def main(dict_config, config_file_path):
 
     model = prepare_model(configs)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
     model.to(device)
     optimizer = get_optimizer(model, configs)
+
+    scheduler = get_scheduler(optimizer, configs)
 
     # Initialize train and valid TensorBoards
     train_writer, valid_writer = prepare_tensorboard(result_path)
@@ -126,8 +130,9 @@ def main(dict_config, config_file_path):
     scaler = GradScaler()
 
     for epoch in range(num_epochs):
-        training_loop(model, trainloader, optimizer, epoch, device, scaler, train_writer, configs=configs)
+        training_loop(model, trainloader, optimizer, epoch, device, scaler, scheduler, train_writer, configs=configs)
         validation_loop(model, testloader, epoch, device, scaler, valid_writer, configs=configs)
+        scheduler.step()
 
 
 if __name__ == '__main__':
