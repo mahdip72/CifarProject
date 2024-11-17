@@ -10,13 +10,37 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 def get_optimizer(model, configs):
     optimizer_config = configs.optimizer
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=optimizer_config.lr,
-        betas=(optimizer_config.beta_1, optimizer_config.beta_2),
-        eps=optimizer_config.eps,
-        weight_decay=optimizer_config.weight_decay
-    )
+    optimizer_name = optimizer_config.name.lower()
+    weight_decouple = optimizer_config.weight_decouple
+
+    if optimizer_name == 'adam':
+        if weight_decouple:
+            print("Using AdamW")
+            optimizer = torch.optim.AdamW(
+                model.parameters(),
+                lr=optimizer_config.lr,
+                betas=(optimizer_config.beta_1, optimizer_config.beta_2),
+                eps=optimizer_config.eps,
+                weight_decay=optimizer_config.weight_decay
+            )
+        else:
+            print("Using Adam")
+            optimizer = torch.optim.Adam(
+                model.parameters(),
+                lr=optimizer_config.lr,
+                betas=(optimizer_config.beta_1, optimizer_config.beta_2),
+                eps=optimizer_config.eps,
+                weight_decay=optimizer_config.weight_decay
+            )
+    elif optimizer_name == 'sgd':
+        print("Using SGD")
+        optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=optimizer_config.lr,
+            momentum=optimizer_config.momentum,
+            weight_decay=optimizer_config.weight_decay,
+            nesterov=optimizer_config.nesterov
+        )
     return optimizer
 
 

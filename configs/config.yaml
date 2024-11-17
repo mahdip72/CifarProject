@@ -1,7 +1,7 @@
 fix_seed: 0
 checkpoints_every: 64
 tensorboard_log: True
-tqdm_progress_bar: False
+tqdm_progress_bar: True
 result_path: ./results/test/
 
 model:
@@ -13,7 +13,7 @@ model:
 
 train_settings:
   data_path: /path/to/training_data/
-  num_epochs: 32
+  num_epochs: 64
   shuffle: True
   mixed_precision: bf16 # no, fp16, bf16, fp8
   batch_size: 128
@@ -27,7 +27,8 @@ valid_settings:
 
 optimizer:
   name: adam
-  lr: 5e-4
+#  name: sgd
+  lr: 1e-3
   weight_decouple: True
   weight_decay: 1e-2
   eps: 1e-16
@@ -40,3 +41,12 @@ optimizer:
     min_lr: 5e-6
     gamma: 0.2
     num_restarts: 1
+  nesterov: true
+  momentum: 0.9
+
+scheduler:
+    name: cosine_annealing
+    T_max: 128
+    T_0: 10
+    T_mult: 2
+    eta_min: 0.00001
