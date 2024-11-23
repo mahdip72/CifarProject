@@ -2,7 +2,7 @@ import argparse
 import yaml
 import torch
 import numpy as np
-from utils import load_configs, prepare_saving_dir, prepare_tensorboard, get_optimizer, get_scheduler
+from utils import load_configs, prepare_saving_dir, prepare_tensorboard, get_optimizer, get_scheduler, save_checkpoint
 from dataset import prepare_dataloaders
 from model import prepare_model
 import tqdm
@@ -11,17 +11,14 @@ from torch.amp import GradScaler, autocast
 
 
 
-def training_loop(model, trainloader, optimizer, epoch, device, scaler, scheduler, train_writer=None, **kwargs):
+def training_loop(model, trainloader, optimizer, epoch, device, scaler, scheduler, train_writer=None, grad_clip_norm=1, **kwargs):
     accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=10)
     f1_score = torchmetrics.F1Score(num_classes=10, average='macro', task="multiclass")
 
     accuracy.to(device)
     f1_score.to(device)
-
     model.train()
     running_loss = 0.0
-
-    grad_clip_norm = kwargs['configs'].train_settings.grad_clip_norm
 
     for i, (inputs, labels) in tqdm.tqdm(enumerate(trainloader), total=len(trainloader), desc=f'Epoch {epoch + 1}',
                                          leave=False, disable=not kwargs['configs'].tqdm_progress_bar):
@@ -133,15 +130,20 @@ def main(dict_config, config_file_path):
 
     # Initialize train and valid TensorBoards
     train_writer, valid_writer = prepare_tensorboard(result_path)
-
     num_epochs = configs.train_settings.num_epochs
+    grad_clip_norm = configs.train_settings.grad_clip_norm
+    checkpoint_every = configs.checkpoints_every
+
 
     scaler = GradScaler()
 
     for epoch in range(num_epochs):
-        training_loop(model, trainloader, optimizer, epoch, device, scaler, scheduler, train_writer, configs=configs)
+        training_loop(model, trainloader, optimizer, epoch, device, scaler, scheduler,
+                      train_writer=train_writer, grad_clip_norm=grad_clip_norm, configs=configs)
         validation_loop(model, testloader, epoch, device, scaler, valid_writer, configs=configs)
         scheduler.step()
+        if (epoch + 1) % checkpoint_every == 0:
+            save_checkpoint(model, optimizer, scheduler, scaler, epoch, checkpoint_path)
 
 
 if __name__ == '__main__':

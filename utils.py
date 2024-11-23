@@ -105,6 +105,21 @@ def prepare_saving_dir(configs, config_file_path):
     # Return the path to the result directory.
     return result_path, checkpoint_path
 
+def save_checkpoint(model, optimizer, scheduler, scaler, epoch, checkpoint_path):
+    """
+    Save a checkpoint of the model, optimizer, scheduler, and scaler.
+    """
+    checkpoint = {
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'scheduler_state_dict': scheduler.state_dict(),
+        'scaler_state_dict': scaler.state_dict(),
+        'epoch': epoch
+    }
+    checkpoint_file = os.path.join(checkpoint_path, f'checkpoint_epoch_{epoch + 1}.pth')
+    torch.save(checkpoint, checkpoint_file)
+    print(f"Checkpoint saved at {checkpoint_file}")
+
 
 def load_configs(config):
     """
