@@ -20,6 +20,9 @@ def training_loop(model, trainloader, optimizer, epoch, device, scaler, schedule
 
     model.train()
     running_loss = 0.0
+
+    grad_clip_norm = kwargs['configs'].train_settings.grad_clip_norm
+
     for i, (inputs, labels) in tqdm.tqdm(enumerate(trainloader), total=len(trainloader), desc=f'Epoch {epoch + 1}',
                                          leave=False, disable=not kwargs['configs'].tqdm_progress_bar):
         inputs, labels = inputs.to(device), labels.to(device)
@@ -31,6 +34,9 @@ def training_loop(model, trainloader, optimizer, epoch, device, scaler, schedule
             loss = torch.nn.functional.cross_entropy(predicts, labels)
 
         scaler.scale(loss).backward()
+        scaler.unscale_(optimizer)
+        # Gradient clipping
+        grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip_norm)
         scaler.step(optimizer)
         scaler.update()
         running_loss += loss.item()
@@ -38,6 +44,9 @@ def training_loop(model, trainloader, optimizer, epoch, device, scaler, schedule
 
         accuracy.update(predicts.detach(), labels.detach())
         f1_score.update(predicts.detach(), labels.detach())
+
+        if train_writer:
+            train_writer.add_scalar('Gradient_Norm', grad_norm, epoch * len(trainloader) + i)
 
     avg_train_loss = running_loss / len(trainloader)
 

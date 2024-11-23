@@ -13,12 +13,13 @@ model:
 
 train_settings:
   data_path: /path/to/training_data/
-  num_epochs: 64
+  num_epochs: 128
   shuffle: True
   mixed_precision: bf16 # no, fp16, bf16, fp8
   batch_size: 128
   num_workers: 4
   grad_accumulation: 4
+  grad_clip_norm: 1
 
 valid_settings:
   data_path: /path/to/validation_data/
@@ -26,9 +27,9 @@ valid_settings:
   num_workers: 0
 
 optimizer:
-  name: adam
-#  name: sgd
-  lr: 1e-3
+#  name: adam
+  name: sgd
+  lr: 1e-2
   weight_decouple: True
   weight_decay: 1e-2
   eps: 1e-16
@@ -38,15 +39,16 @@ optimizer:
   grad_clip_norm: 1
   decay: # presumably a cosine decay learning rate scheduler with warmup
     warmup: 512
-    min_lr: 5e-6
+    min_lr: 0
     gamma: 0.2
     num_restarts: 1
   nesterov: true
   momentum: 0.9
 
 scheduler:
-    name: cosine_annealing
+#    name: cosine_annealing
+    name: cosine_annealing_warm_restarts
     T_max: 128
-    T_0: 10
+    T_0: 16
     T_mult: 2
-    eta_min: 0.00001
+    eta_min: 0
