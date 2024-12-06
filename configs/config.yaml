@@ -10,6 +10,7 @@ model:
   out_channels: 32
   num_layers: 3
   num_classes: 10
+  num_blocks: 3
 
 train_settings:
   data_path: /path/to/training_data/
@@ -46,8 +47,8 @@ optimizer:
   momentum: 0.9
 
 scheduler:
-#    name: cosine_annealing
-    name: cosine_annealing_warm_restarts
+    name: cosine_annealing
+#    name: cosine_annealing_warm_restarts
     T_max: 128
     T_0: 16
     T_mult: 2

@@ -42,6 +42,7 @@ class CIFARModel(nn.Module):
         out_channels = configs.model.out_channels
         num_layers = configs.model.num_layers
         num_classes = configs.model.num_classes
+        num_blocks = configs.model.num_blocks
 
         # initial convolutional layer
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3,
@@ -53,10 +54,10 @@ class CIFARModel(nn.Module):
         for i in range(num_layers):
             if i == 0:
                 res_layer = self._make_layer(out_channels, out_channels,
-                                             num_blocks=2, stride=1)
+                                             num_blocks=num_blocks, stride=1)
             else:
                 res_layer = self._make_layer(out_channels, out_channels*2,
-                                             num_blocks=2, stride=2)
+                                             num_blocks=num_blocks, stride=2)
                 out_channels *= 2
             self.res_layers.append(res_layer)
 
@@ -96,6 +97,16 @@ def prepare_model(configs):
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
 
+def count_layerwise_parameters(model):
+
+    print("\nLayer-wise Parameter Breakdown:")
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(f"{name}: {param.numel()} parameters")
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"\nTotal parameters: {total_params}")
+    return total_params
+
 
 if __name__ == '__main__':
     # This is the main function to test the model's components
@@ -110,6 +121,7 @@ if __name__ == '__main__':
     test_configs = Box(config_data)
 
     test_model = prepare_model(test_configs)
+    count_layerwise_parameters(test_model)
     print(test_model)
 
     dummy_input = torch.randn(1, 3, 32, 32)
