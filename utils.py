@@ -57,12 +57,48 @@ def get_scheduler(optimizer, configs):
     elif scheduler_name == 'cosine_annealing_warm_restarts':
         scheduler = lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer,
-            T_0=scheduler_config.T_0,  # Number of iterations/epochs for the first restart cycle
-            T_mult=scheduler_config.T_mult,  # Factor to increase the cycle length after each restart
-            eta_min=scheduler_config.eta_min  # Minimum learning rate after each restart
+            T_0=scheduler_config.T_0,
+            T_mult=scheduler_config.T_mult,
+            eta_min=scheduler_config.eta_min
+        )
+    elif scheduler_name == 'cosine_annealing_sequential':
+        # First cosine scheduler
+        first_cosine_scheduler = lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=configs.train_settings.num_epochs // 2,
+            eta_min=scheduler_config.eta_min_first
+        )
+        print("First cosine scheduler with eta_min: ", scheduler_config.eta_min_first, " and starting learning rate of: ", optimizer.param_groups[0]["lr"])
+        # Second cosine scheduler
+        second_cosine_scheduler = lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=configs.train_settings.num_epochs // 2,
+            eta_min=scheduler_config.eta_min_second
+        )
+        print("Second cosine scheduler with eta_min: ", scheduler_config.eta_min_second, " and starting learning rate of: ", scheduler_config.eta_min_first)
+        # SequentialLR combining all three
+        scheduler = lr_scheduler.SequentialLR(
+            optimizer,
+            schedulers=[first_cosine_scheduler, second_cosine_scheduler],
+            milestones=[configs.train_settings.num_epochs // 2]
         )
 
+    elif scheduler_name == 'multistep_lr':
+        milestones = [
+            int(configs.train_settings.num_epochs / 3),
+            int(2 * configs.train_settings.num_epochs / 3)
+        ]
+
+        scheduler = lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=milestones,
+            gamma=0.1
+        )
+    else:
+        raise ValueError(f"Unsupported scheduler: {scheduler_name}")
+
     return scheduler
+
 
 
 def prepare_tensorboard(result_path):

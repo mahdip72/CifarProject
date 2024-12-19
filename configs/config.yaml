@@ -7,10 +7,11 @@ result_path: ./results/test/
 model:
   compile_model: False
   in_channels: 3
-  out_channels: 32
-  num_layers: 3
+  out_channels: 16
+  num_layers: 5
   num_classes: 10
-  num_blocks: 3
+  num_blocks: 2
+  growth_rate: 1.7
 
 train_settings:
   data_path: /path/to/training_data/
@@ -44,12 +45,17 @@ optimizer:
     gamma: 0.2
     num_restarts: 1
   nesterov: true
-  momentum: 0.9
+  momentum: 0.90
 
 scheduler:
-    name: cosine_annealing
+#    name: multistep_lr
+#    name: cosine_annealing
 #    name: cosine_annealing_warm_restarts
+    name: cosine_annealing_sequential
+
     T_max: 128
     T_0: 16
     T_mult: 2
-    eta_min: 0
+    eta_min: 0.0001
+    eta_min_first: 0.0001
+    eta_min_second: 0.000001

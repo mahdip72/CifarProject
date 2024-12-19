@@ -138,12 +138,24 @@ def main(dict_config, config_file_path):
     scaler = GradScaler()
 
     for epoch in range(num_epochs):
+
+        # Training and validation loops
         training_loop(model, trainloader, optimizer, epoch, device, scaler, scheduler,
                       train_writer=train_writer, grad_clip_norm=grad_clip_norm, configs=configs)
         validation_loop(model, testloader, epoch, device, scaler, valid_writer, configs=configs)
+
         scheduler.step()
+
+        # For changing the scheduler at the middle of training
+        if configs.scheduler.name == 'cosine_annealing_sequential' and (epoch + 1 == num_epochs // 2) :
+            new_start_lr = configs.scheduler.eta_min_first
+            print(f"Resetting learning rate to {new_start_lr} at epoch {epoch + 1}")
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = new_start_lr
+
         if (epoch + 1) % checkpoint_every == 0:
             save_checkpoint(model, optimizer, scheduler, scaler, epoch, checkpoint_path)
+
 
 
 if __name__ == '__main__':

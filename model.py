@@ -43,6 +43,7 @@ class CIFARModel(nn.Module):
         num_layers = configs.model.num_layers
         num_classes = configs.model.num_classes
         num_blocks = configs.model.num_blocks
+        growth_rate = configs.model.growth_rate
 
         # initial convolutional layer
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3,
@@ -51,14 +52,23 @@ class CIFARModel(nn.Module):
 
         # create residual layers
         self.res_layers = nn.ModuleList()
+
         for i in range(num_layers):
             if i == 0:
+                # first layer: same input and output channels
                 res_layer = self._make_layer(out_channels, out_channels,
                                              num_blocks=num_blocks, stride=1)
-            else:
-                res_layer = self._make_layer(out_channels, out_channels*2,
+            elif 1 <= i <= 3:
+                # middle layers: increase output channels by growth rate
+                res_layer = self._make_layer(out_channels, int(out_channels * growth_rate),
                                              num_blocks=num_blocks, stride=2)
-                out_channels *= 2
+                out_channels = int(out_channels * growth_rate)
+            else:
+                # final layers: increase the output channels by even larger amount
+                res_layer = self._make_layer(out_channels, int(out_channels * 1.95),
+                                             num_blocks=num_blocks, stride=2)
+                out_channels = int(out_channels * 1.95)
+
             self.res_layers.append(res_layer)
 
         # global average pooling layer
