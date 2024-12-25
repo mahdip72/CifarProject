@@ -4,13 +4,15 @@ import torch.nn.functional as F
 
 
 class BasicBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
+    def __init__(self, in_channels, out_channels, stride=1, dropout=0.0):
         super(BasicBlock, self).__init__()
 
         # First convolutional layer
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3,
                                stride=stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(out_channels)
+        self.dropout = nn.Dropout2d(p=dropout)  # Dropout after activation
+
 
         # Second convolutional layer
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3,
@@ -28,6 +30,7 @@ class BasicBlock(nn.Module):
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
+        out = self.dropout(out)
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)  # Add the skip connection
         out = F.relu(out)
@@ -44,6 +47,8 @@ class CIFARModel(nn.Module):
         num_classes = configs.model.num_classes
         num_blocks = configs.model.num_blocks
         growth_rate = configs.model.growth_rate
+        conv_dropout = configs.model.conv_dropout
+        fc_dropout = configs.model.fc_dropout
 
         # initial convolutional layer
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3,
@@ -57,24 +62,29 @@ class CIFARModel(nn.Module):
             if i == 0:
                 # first layer: same input and output channels
                 res_layer = self._make_layer(out_channels, out_channels,
-                                             num_blocks=num_blocks, stride=1)
-            elif 1 <= i <= 3:
+                                             num_blocks=num_blocks, stride=1, dropout=conv_dropout)
+            elif 1 <= i <= 2:
                 # middle layers: increase output channels by growth rate
                 res_layer = self._make_layer(out_channels, int(out_channels * growth_rate),
-                                             num_blocks=num_blocks, stride=2)
+                                             num_blocks=num_blocks, stride=2, dropout=conv_dropout)
                 out_channels = int(out_channels * growth_rate)
             else:
                 # final layers: increase the output channels by even larger amount
-                res_layer = self._make_layer(out_channels, int(out_channels * 1.95),
-                                             num_blocks=num_blocks, stride=2)
-                out_channels = int(out_channels * 1.95)
+                res_layer = self._make_layer(out_channels, int(out_channels * 2),
+                                             num_blocks=num_blocks, stride=2, dropout=conv_dropout)
+                out_channels = int(out_channels * 2)
 
             self.res_layers.append(res_layer)
 
         # global average pooling layer
         self.pool = nn.AdaptiveAvgPool2d((1, 1))
         # final fully connected layer
-        self.fc = nn.Linear(out_channels, num_classes)
+        self.fc = nn.Sequential(
+            nn.Linear(out_channels, out_channels // 2),
+            nn.ReLU(),
+            nn.Dropout(p=fc_dropout),  # Dropout before final classification
+            nn.Linear(out_channels // 2, num_classes)
+        )
 
     def forward(self, x):
         # initial convolutional layer
@@ -89,11 +99,11 @@ class CIFARModel(nn.Module):
         x = self.fc(x)
         return x
 
-    def _make_layer(self, in_channels, out_channels, num_blocks, stride):
+    def _make_layer(self, in_channels, out_channels, num_blocks, stride, dropout):
         layers = []
-        layers.append(BasicBlock(in_channels, out_channels, stride))
+        layers.append(BasicBlock(in_channels, out_channels, stride, dropout))
         for _ in range(1, num_blocks):
-            layers.append(BasicBlock(out_channels, out_channels, stride=1))
+            layers.append(BasicBlock(out_channels, out_channels, stride=1, dropout=dropout))
         return nn.Sequential(*layers)
 
 
